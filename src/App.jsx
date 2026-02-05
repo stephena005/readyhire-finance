@@ -35,6 +35,13 @@ const AppContent = () => {
     }
   }, [user, showAuth]);
 
+  // Navigate to dash/setup automatically on login if on home
+  useEffect(() => {
+    if (user && page === 'home') {
+      setPage(profile ? 'dash' : 'setup');
+    }
+  }, [user, profile, page]);
+
   if (firebaseUser === undefined) {
     return (
       <div className={'min-h-screen flex items-center justify-center ' + (darkMode ? 'bg-slate-900 text-white' : 'bg-white')}>
