@@ -63,12 +63,29 @@ export const AppProvider = ({ children }) => {
     useEffect(() => { saveState('darkMode', darkMode); }, [darkMode]);
 
     useEffect(() => {
+        console.log('Setting up onAuthStateChanged listener...');
         const unsub = onAuthStateChanged(auth, (u) => {
+            console.log('onAuthStateChanged fired. User:', u ? u.email : 'null');
             setFirebaseUser(u);
-            if (u) setUser({ id: u.uid, email: u.email, name: u.displayName || u.email?.split('@')[0] || 'User' });
+            if (u) {
+                const userData = { id: u.uid, email: u.email, name: u.displayName || u.email?.split('@')[0] || 'User' };
+                console.log('Setting global user state:', userData);
+                setUser(userData);
+            } else {
+                console.log('Clearing global user state');
+                // setUser(null); // Keep as is to avoid breaking existing logic, but log it
+            }
         });
         return unsub;
     }, []);
+
+    useEffect(() => {
+        console.log('Global user state changed:', user ? user.email : 'null');
+    }, [user]);
+
+    useEffect(() => {
+        console.log('FirebaseUser state changed:', firebaseUser ? firebaseUser.email : (firebaseUser === undefined ? 'undefined' : 'null'));
+    }, [firebaseUser]);
 
     useEffect(() => {
         const m = new Date().toISOString().slice(0, 7);

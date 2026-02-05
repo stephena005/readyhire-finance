@@ -30,18 +30,37 @@ const AppContent = () => {
 
   // Auto-close auth modal on login
   useEffect(() => {
+    console.log('Auth check useEffect:', { hasUser: !!user, showAuth });
     if (user && showAuth) {
+      console.log('CLOSING AUTH MODAL AUTOMATICALLY');
       setShowAuth(false);
     }
   }, [user, showAuth]);
 
   // Navigate to dash/setup automatically on login if on home
   useEffect(() => {
+    console.log('Navigation check useEffect:', { hasUser: !!user, hasProfile: !!profile, page });
     if (user && page === 'home') {
-      setPage(profile ? 'dash' : 'setup');
+      const target = profile ? 'dash' : 'setup';
+      console.log('NAVIGATING AUTOMATICALLY TO:', target);
+      setPage(target);
     }
   }, [user, profile, page]);
 
+  // State-driven routing logic
+  let effectivePage = page;
+
+  // If we have a user but are on 'home', auto-determine where to go
+  if (user && page === 'home') {
+    effectivePage = profile ? 'dash' : 'setup';
+  }
+
+  // If no profile, force 'setup' (onboarding) even if page state says otherwise
+  if (user && !profile) {
+    effectivePage = 'setup';
+  }
+
+  // Handle Loading State
   if (firebaseUser === undefined) {
     return (
       <div className={'min-h-screen flex items-center justify-center ' + (darkMode ? 'bg-slate-900 text-white' : 'bg-white')}>
@@ -50,6 +69,7 @@ const AppContent = () => {
     );
   }
 
+  // Handle Auth Overlay
   if (!user || showAuth) {
     return (
       <div className={'min-h-screen ' + (darkMode ? 'bg-slate-900 text-white' : 'bg-white text-slate-900')}>
@@ -57,7 +77,7 @@ const AppContent = () => {
           <AuthPage />
         ) : (
           <>
-            <Nav page={page} setPage={setPage} />
+            <Nav page={effectivePage} setPage={setPage} />
             <div className="max-w-7xl mx-auto px-4">
               <HomePage setPage={setPage} onSignup={() => setShowAuth(true)} />
             </div>
@@ -67,17 +87,7 @@ const AppContent = () => {
     );
   }
 
-  if (!profile) {
-    return (
-      <div className={'min-h-screen ' + (darkMode ? 'bg-slate-900 text-white' : 'bg-white text-slate-900')}>
-        <Nav page="setup" setPage={setPage} />
-        <div className="max-w-7xl mx-auto px-4 py-8">
-          <CVOnboardingPage onComplete={() => { setOnboarded(true); setPage('dash'); }} />
-        </div>
-      </div>
-    );
-  }
-
+  // Main Application Wrapper
   const pages = {
     home: HomePage,
     dash: DashPage,
@@ -87,16 +97,16 @@ const AppContent = () => {
     setup: CVOnboardingPage
   };
 
-  const PC = pages[page] || HomePage;
-  const pp = page === 'home'
+  const PC = pages[effectivePage] || HomePage;
+  const pp = effectivePage === 'home'
     ? { setPage, onSignup: () => { } }
-    : page === 'setup'
+    : effectivePage === 'setup'
       ? { onComplete: () => { setOnboarded(true); setPage('dash'); } }
       : { setPage };
 
   return (
     <div className={'min-h-screen ' + (darkMode ? 'bg-slate-900 text-white' : 'bg-white text-slate-900')}>
-      <Nav page={page} setPage={setPage} />
+      <Nav page={effectivePage} setPage={setPage} />
       <div className="max-w-7xl mx-auto px-4 py-8">
         <PC {...pp} />
       </div>
