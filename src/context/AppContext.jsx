@@ -72,8 +72,7 @@ export const AppProvider = ({ children }) => {
                 console.log('Setting global user state:', userData);
                 setUser(userData);
             } else {
-                console.log('Clearing global user state');
-                // setUser(null); // Keep as is to avoid breaking existing logic, but log it
+                setUser(null);
             }
         });
         return unsub;

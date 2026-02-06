@@ -19,11 +19,14 @@ export const AuthPage = () => {
     const handleGoogle = async () => {
         setLoading(true);
         setError('');
+        console.log('Starting Google sign-in...');
         try {
             const r = await signInWithPopup(auth, googleProvider);
+            console.log('Google sign-in success:', r.user.email);
             login({ id: r.user.uid, email: r.user.email, name: r.user.displayName || r.user.email?.split('@')[0] });
         } catch (e) {
-            setError(e.code === 'auth/popup-closed-by-user' ? 'Sign-in cancelled' : 'Google sign-in failed.');
+            console.error('Google sign-in error:', e);
+            setError(e.code === 'auth/popup-closed-by-user' ? 'Sign-in cancelled' : `Google sign-in failed (${e.code}). Please check your connection or console.`);
         }
         setLoading(false);
     };
@@ -31,11 +34,14 @@ export const AuthPage = () => {
     const handleApple = async () => {
         setLoading(true);
         setError('');
+        console.log('Starting Apple sign-in...');
         try {
             const r = await signInWithPopup(auth, appleProvider);
+            console.log('Apple sign-in success:', r.user.email);
             login({ id: r.user.uid, email: r.user.email, name: r.user.displayName || r.user.email?.split('@')[0] });
         } catch (e) {
-            setError(e.code === 'auth/popup-closed-by-user' ? 'Sign-in cancelled' : 'Apple sign-in failed.');
+            console.error('Apple sign-in error:', e);
+            setError(e.code === 'auth/popup-closed-by-user' ? 'Sign-in cancelled' : `Apple sign-in failed (${e.code}).`);
         }
         setLoading(false);
     };
