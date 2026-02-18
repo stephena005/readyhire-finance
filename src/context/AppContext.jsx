@@ -1,6 +1,6 @@
 import React, { useState, createContext, useContext, useEffect } from 'react';
 import { onAuthStateChanged, auth, signOut } from '../firebase';
-import { generateQuestionBank as apiGenerateBank, verifySubscription } from '../utils/api';
+import { verifySubscription } from '../utils/api';
 
 const Ctx = createContext();
 
@@ -62,13 +62,31 @@ export const AppProvider = ({ children }) => {
     useEffect(() => { saveState('targetCompany', targetCompany); }, [targetCompany]);
     useEffect(() => { saveState('darkMode', darkMode); }, [darkMode]);
 
+    // Single source of truth for auth state.
+    // AuthPage does NOT call login() — this listener handles everything.
     useEffect(() => {
         console.log('Setting up onAuthStateChanged listener...');
-        const unsub = onAuthStateChanged(auth, (u) => {
+        const unsub = onAuthStateChanged(auth, async (u) => {
             console.log('onAuthStateChanged fired. User:', u ? u.email : 'null');
             setFirebaseUser(u);
             if (u) {
-                const userData = { id: u.uid, email: u.email, name: u.displayName || u.email?.split('@')[0] || 'User' };
+                // On fresh email signup, displayName may not be available immediately
+                // because updateProfile runs after createUserWithEmailAndPassword.
+                // We reload to pick up the latest profile data.
+                let displayName = u.displayName;
+                if (!displayName) {
+                    try {
+                        await u.reload();
+                        displayName = u.displayName;
+                    } catch (e) {
+                        console.warn('Could not reload user for displayName:', e);
+                    }
+                }
+                const userData = {
+                    id: u.uid,
+                    email: u.email,
+                    name: displayName || u.email?.split('@')[0] || 'User'
+                };
                 console.log('Setting global user state:', userData);
                 setUser(userData);
             } else {
@@ -120,7 +138,10 @@ export const AppProvider = ({ children }) => {
     const questionsLeft = () => tierConfig.questionsPerMonth === Infinity ? '∞' : Math.max(0, tierConfig.questionsPerMonth - usage.questions);
     const casesLeft = () => tierConfig.casesPerMonth === Infinity ? '∞' : Math.max(0, tierConfig.casesPerMonth - usage.cases);
 
+    // login() is kept for backward compatibility but should NOT be called from AuthPage.
+    // onAuthStateChanged is the single source of truth for auth state.
     const login = (u) => setUser(u);
+
     const logout = async () => {
         try { await signOut(auth); } catch { }
         setUser(null);
