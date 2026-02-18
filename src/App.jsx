@@ -14,12 +14,11 @@ import { AuthPage } from './pages/AuthPage';
 import { CVOnboardingPage } from './pages/CVOnboardingPage';
 
 const AppContent = () => {
-  console.log('AppContent rendering...');
   const { user, firebaseUser, profile, setOnboarded, darkMode } = useApp();
-  console.log('App state:', { hasUser: !!user, hasFirebaseUser: !!firebaseUser, hasProfile: !!profile });
   const [page, setPage] = useState('home');
   const [showAuth, setShowAuth] = useState(false);
 
+  // Handle checkout success redirect
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('checkout') === 'success') {
@@ -28,39 +27,38 @@ const AppContent = () => {
     }
   }, []);
 
-  // Auto-close auth modal on login
+  // When user logs in, close auth modal AND navigate to the right page in one go.
+  // This avoids the race condition where showAuth closes but page is still 'home',
+  // causing a brief flash of the homepage before effects redirect.
   useEffect(() => {
-    console.log('Auth check useEffect:', { hasUser: !!user, showAuth });
-    if (user && showAuth) {
-      console.log('CLOSING AUTH MODAL AUTOMATICALLY');
-      setShowAuth(false);
+    if (user) {
+      // Close auth modal if open
+      if (showAuth) {
+        setShowAuth(false);
+      }
+      // Navigate to the right destination if still on home
+      if (page === 'home') {
+        setPage(profile ? 'dash' : 'setup');
+      }
     }
-  }, [user, showAuth]);
+  }, [user, profile]);
 
-  // Navigate to dash/setup automatically on login if on home
-  useEffect(() => {
-    console.log('Navigation check useEffect:', { hasUser: !!user, hasProfile: !!profile, page });
-    if (user && page === 'home') {
-      const target = profile ? 'dash' : 'setup';
-      console.log('NAVIGATING AUTOMATICALLY TO:', target);
-      setPage(target);
-    }
-  }, [user, profile, page]);
-
-  // State-driven routing logic
+  // Compute effective page for rendering.
+  // This ensures the correct page shows even before effects run.
   let effectivePage = page;
 
-  // If we have a user but are on 'home', auto-determine where to go
-  if (user && page === 'home') {
-    effectivePage = profile ? 'dash' : 'setup';
+  if (user) {
+    // If logged in but no profile, always force to setup
+    if (!profile && page !== 'price') {
+      effectivePage = 'setup';
+    }
+    // If logged in and still on 'home', redirect
+    else if (page === 'home') {
+      effectivePage = profile ? 'dash' : 'setup';
+    }
   }
 
-  // If no profile, force 'setup' (onboarding) even if page state says otherwise
-  if (user && !profile) {
-    effectivePage = 'setup';
-  }
-
-  // Handle Loading State
+  // Loading state — waiting for Firebase to initialise
   if (firebaseUser === undefined) {
     return (
       <div className={'min-h-screen flex items-center justify-center ' + (darkMode ? 'bg-slate-900 text-white' : 'bg-white')}>
@@ -69,25 +67,26 @@ const AppContent = () => {
     );
   }
 
-  // Handle Auth Overlay
-  if (!user || showAuth) {
+  // Not logged in — show either AuthPage or public HomePage
+  if (!user) {
+    if (showAuth) {
+      return (
+        <div className={'min-h-screen ' + (darkMode ? 'bg-slate-900 text-white' : 'bg-white text-slate-900')}>
+          <AuthPage />
+        </div>
+      );
+    }
     return (
       <div className={'min-h-screen ' + (darkMode ? 'bg-slate-900 text-white' : 'bg-white text-slate-900')}>
-        {showAuth ? (
-          <AuthPage />
-        ) : (
-          <>
-            <Nav page={effectivePage} setPage={setPage} />
-            <div className="max-w-7xl mx-auto px-4">
-              <HomePage setPage={setPage} onSignup={() => setShowAuth(true)} />
-            </div>
-          </>
-        )}
+        <Nav page="home" setPage={setPage} />
+        <div className="max-w-7xl mx-auto px-4">
+          <HomePage setPage={setPage} onSignup={() => setShowAuth(true)} />
+        </div>
       </div>
     );
   }
 
-  // Main Application Wrapper
+  // Logged in — render the appropriate page
   const pages = {
     home: HomePage,
     dash: DashPage,
