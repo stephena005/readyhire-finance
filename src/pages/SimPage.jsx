@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Mic, Shuffle, Timer, Loader2, ChevronRight, Lock } from 'lucide-react';
+import { Mic, Shuffle, Timer, Loader2, ChevronRight } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { Card, AudioRecorder, PressureTimer } from '../components/Common';
+import { Card, PressureTimer } from '../components/Common';
 import { getAIFeedback } from '../utils/api';
 
 export const SimPage = ({ setPage }) => {
@@ -100,7 +100,6 @@ export const SimPage = ({ setPage }) => {
                                 {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Submit'}
                             </button>
                         </div>
-                        <AudioRecorder />
                     </>
                 ) : (
                     <div className="space-y-4">
@@ -124,7 +123,6 @@ export const SimPage = ({ setPage }) => {
                                 </div>
                                 {feedback.strengths?.map((s, i) => <div key={i} className={'p-3 rounded-xl ' + (darkMode ? 'bg-green-900/20' : 'bg-green-50')}><p className="text-sm"><span className="text-green-600 font-semibold">{s.t}</span> — {s.d}</p></div>)}
                                 {feedback.improvements?.map((s, i) => <div key={i} className={'p-3 rounded-xl ' + (darkMode ? 'bg-amber-900/20' : 'bg-amber-50')}><p className="text-sm"><span className="text-amber-600 font-semibold">{s.t}</span> — {s.d}</p></div>)}
-                                {!hasFeedback() && <div className={'p-3 rounded-xl text-sm ' + (darkMode ? 'bg-indigo-900/20' : 'bg-indigo-50')}><Lock className="w-4 h-4 inline mr-1 text-indigo-500" />Upgrade to Standard (£9/mo) for detailed AI feedback.</div>}
 
                                 <button onClick={() => setShowModel(!showModel)} className="text-sm text-indigo-500 font-medium">{showModel ? 'Hide' : 'Show'} Model Answer</button>
                                 {showModel && q.m && <div className={'p-3 rounded-xl ' + (darkMode ? 'bg-indigo-900/30' : 'bg-indigo-50')}><p className="text-xs text-indigo-500 mb-1">Model Answer</p><p className="text-sm">{q.m}</p></div>}

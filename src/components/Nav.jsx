@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Home, BarChart3, Mic, BookOpen, CreditCard, Sun, Moon, Zap, TrendingUp, Menu, X } from 'lucide-react';
+import { Home, BarChart3, Mic, BookOpen, Sun, Moon, Zap, TrendingUp, Menu } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { ShortcutsModal } from './Common';
 
 export const Nav = ({ page, setPage }) => {
-    const { sub, user, logout, questionsLeft, darkMode, setDarkMode, setShowShortcuts, tierConfig } = useApp();
+    const { user, logout, questionsLeft, darkMode, setDarkMode, setShowShortcuts, tierConfig } = useApp();
     const [open, setOpen] = useState(false);
     const [um, setUm] = useState(false);
 
@@ -13,7 +13,6 @@ export const Nav = ({ page, setPage }) => {
         { id: 'dash', l: 'Dashboard', i: BarChart3 },
         { id: 'sim', l: 'Practice', i: Mic },
         { id: 'cases', l: 'Cases', i: BookOpen },
-        { id: 'price', l: 'Pricing', i: CreditCard }
     ];
 
     useEffect(() => {
@@ -52,7 +51,7 @@ export const Nav = ({ page, setPage }) => {
 
                         <div className={'flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-sm ' + (darkMode ? 'bg-slate-800' : 'bg-slate-100')}>
                             <Zap className="w-4 h-4 text-indigo-500" />{questionsLeft()}
-                            <span className={'text-[10px] px-1.5 py-0.5 rounded-full font-bold ' + (sub.tier === 'pro' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-400' : sub.tier === 'standard' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-400' : 'bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-400')}>
+                            <span className={'text-[10px] px-1.5 py-0.5 rounded-full font-bold bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-400'}>
                                 {tierConfig.name}
                             </span>
                         </div>
@@ -68,7 +67,6 @@ export const Nav = ({ page, setPage }) => {
                                         <p className="text-xs opacity-50 truncate">{user?.email}</p>
                                     </div>
                                     <button onClick={() => { setPage('setup'); setUm(false); }} className="w-full px-4 py-2 text-left text-sm hover:bg-slate-50 dark:hover:bg-slate-700">New Application</button>
-                                    <button onClick={() => { setPage('price'); setUm(false); }} className="w-full px-4 py-2 text-left text-sm hover:bg-slate-50 dark:hover:bg-slate-700">Subscription</button>
                                     <button onClick={() => { logout(); setUm(false); }} className="w-full px-4 py-2 text-left text-sm text-red-500">Sign Out</button>
                                 </div>
                             )}

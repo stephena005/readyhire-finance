@@ -26,13 +26,8 @@ export const TIERS = {
 };
 
 export const AppProvider = ({ children }) => {
-    console.log('AppProvider initializing...');
     const [firebaseUser, setFirebaseUser] = useState(undefined);
-    const [user, setUser] = useState(() => {
-        const u = loadState('user', null);
-        console.log('Initial user state from storage:', u);
-        return u;
-    });
+    const [user, setUser] = useState(() => loadState('user', null));
     const [sub, setSub] = useState(() => loadState('sub', { tier: 'free', usageThisMonth: { questions: 0, cases: 0, managerSessions: 0 }, monthKey: '' }));
     const [cvData, setCvData] = useState(() => loadState('cvData', null));
     const [jobDescription, setJobDescription] = useState(() => loadState('jobDescription', null));
@@ -64,45 +59,24 @@ export const AppProvider = ({ children }) => {
 
     // Single source of truth for auth state.
     // AuthPage does NOT call login() — this listener handles everything.
+    // NOTE: For email signup, displayName may not be set yet when this fires (because
+    // updateProfile is called after createUserWithEmailAndPassword in AuthPage).
+    // AuthPage calls refreshUser() after updateProfile to sync the correct name.
     useEffect(() => {
-        console.log('Setting up onAuthStateChanged listener...');
         const unsub = onAuthStateChanged(auth, async (u) => {
-            console.log('onAuthStateChanged fired. User:', u ? u.email : 'null');
             setFirebaseUser(u);
             if (u) {
-                // On fresh email signup, displayName may not be available immediately
-                // because updateProfile runs after createUserWithEmailAndPassword.
-                // We reload to pick up the latest profile data.
-                let displayName = u.displayName;
-                if (!displayName) {
-                    try {
-                        await u.reload();
-                        displayName = u.displayName;
-                    } catch (e) {
-                        console.warn('Could not reload user for displayName:', e);
-                    }
-                }
-                const userData = {
+                setUser({
                     id: u.uid,
                     email: u.email,
-                    name: displayName || u.email?.split('@')[0] || 'User'
-                };
-                console.log('Setting global user state:', userData);
-                setUser(userData);
+                    name: u.displayName || u.email?.split('@')[0] || 'User'
+                });
             } else {
                 setUser(null);
             }
         });
         return unsub;
     }, []);
-
-    useEffect(() => {
-        console.log('Global user state changed:', user ? user.email : 'null');
-    }, [user]);
-
-    useEffect(() => {
-        console.log('FirebaseUser state changed:', firebaseUser ? firebaseUser.email : (firebaseUser === undefined ? 'undefined' : 'null'));
-    }, [firebaseUser]);
 
     useEffect(() => {
         const m = new Date().toISOString().slice(0, 7);
@@ -138,9 +112,19 @@ export const AppProvider = ({ children }) => {
     const questionsLeft = () => tierConfig.questionsPerMonth === Infinity ? '∞' : Math.max(0, tierConfig.questionsPerMonth - usage.questions);
     const casesLeft = () => tierConfig.casesPerMonth === Infinity ? '∞' : Math.max(0, tierConfig.casesPerMonth - usage.cases);
 
-    // login() is kept for backward compatibility but should NOT be called from AuthPage.
-    // onAuthStateChanged is the single source of truth for auth state.
-    const login = (u) => setUser(u);
+    // Called by AuthPage after updateProfile() on email signup to sync the
+    // updated displayName into global state (onAuthStateChanged fires before
+    // updateProfile runs, so the name would otherwise default to email prefix).
+    const refreshUser = async () => {
+        const u = auth.currentUser;
+        if (!u) return;
+        try { await u.reload(); } catch { /* ignore network errors */ }
+        setUser({
+            id: u.uid,
+            email: u.email,
+            name: u.displayName || u.email?.split('@')[0] || 'User'
+        });
+    };
 
     const logout = async () => {
         try { await signOut(auth); } catch { }
@@ -208,7 +192,7 @@ export const AppProvider = ({ children }) => {
 
     return (
         <Ctx.Provider value={{
-            firebaseUser, user, login, logout, sub, setSub, tierConfig, usage,
+            firebaseUser, user, refreshUser, logout, sub, setSub, tierConfig, usage,
             canUseQuestion, canUseCase, isPersonalised, hasFeedback, useQuestion,
             useCase, questionsLeft, casesLeft, checkSubscription, cvData, setCvData,
             jobDescription, setJobDescription, questionBank, setQuestionBank, profile,

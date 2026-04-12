@@ -58,7 +58,6 @@ export const DashPage = ({ setPage }) => {
                         <div className="flex justify-between text-sm"><span>Cases</span><span className="font-bold">{casesLeft()} left</span></div>
                         <div className="flex justify-between text-sm"><span>Plan</span><span className={'font-bold ' + (sub.tier === 'pro' ? 'text-purple-500' : sub.tier === 'standard' ? 'text-indigo-500' : '')}>{tierConfig.name}</span></div>
                     </div>
-                    {sub.tier === 'free' && <button onClick={() => setPage('price')} className="w-full mt-3 py-2 rounded-lg bg-gradient-to-r from-indigo-500 to-purple-600 text-white text-sm font-medium">Upgrade</button>}
                 </Card>
 
                 <Card hover={false} className="p-4">

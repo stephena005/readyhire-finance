@@ -15,11 +15,15 @@ export const parseCVText = async (cvText) => {
             headers: await getAuthHeaders(),
             body: JSON.stringify({ cvText })
         });
-        if (!r.ok) throw new Error();
+        if (!r.ok) {
+            const errData = await r.json().catch(() => ({}));
+            console.error('CV parse error:', r.status, errData);
+            return { error: errData.error || `Server error (${r.status}). Are you running netlify dev?` };
+        }
         return await r.json();
     } catch (e) {
-        console.error('CV parse:', e);
-        return null;
+        console.error('CV parse fetch error:', e);
+        return { error: 'Could not reach the server. Make sure you are running "netlify dev" (not just "npm run dev").' };
     }
 };
 
@@ -32,26 +36,26 @@ export const generateQuestionBank = async (params) => {
                 headers: await getAuthHeaders(),
                 body: JSON.stringify(params)
             });
-            const data = await r.json();
             if (!r.ok) {
-                console.error('Bank gen error:', r.status, data);
+                const errData = await r.json().catch(() => ({}));
+                console.error('Bank gen error:', r.status, errData);
                 if (attempt === 0) {
                     await new Promise(res => setTimeout(res, 1000));
                     continue;
                 }
-                return null;
+                return { error: errData.error || `Question generation failed (${r.status})` };
             }
-            return data;
+            return await r.json();
         } catch (e) {
             console.error('Bank gen fetch error:', e);
             if (attempt === 0) {
                 await new Promise(res => setTimeout(res, 1000));
                 continue;
             }
-            return null;
+            return { error: 'Could not reach the server. Make sure you are running "netlify dev".' };
         }
     }
-    return null;
+    return { error: 'Question generation failed after retries.' };
 };
 
 export const getAIFeedback = async (question, answer, context) => {
@@ -61,13 +65,15 @@ export const getAIFeedback = async (question, answer, context) => {
             headers: await getAuthHeaders(),
             body: JSON.stringify({ question, answer, context })
         });
-        const d = await r.json();
-        if (d.score !== undefined) return d;
+        if (r.ok) {
+            const d = await r.json();
+            if (d.score !== undefined) return d;
+        }
     } catch (e) {
-        console.error('AI Feedback error:', e);
+        // Network or parse error — fall through to local fallback scoring below
     }
 
-    // Fallback scoring logic
+    // Fallback scoring logic when API is unavailable
     const ans = answer.toLowerCase();
     const keys = question.keys || [];
     const found = keys.filter(k => ans.includes(k.toLowerCase()));
@@ -82,42 +88,6 @@ export const getAIFeedback = async (question, answer, context) => {
         missing,
         summary: 'Score: ' + score + '. Covered ' + found.length + '/' + keys.length + ' concepts.'
     };
-};
-
-export const verifySubscription = async (userEmail) => {
-    try {
-        const r = await fetch('/.netlify/functions/verify-subscription', {
-            method: 'POST',
-            headers: await getAuthHeaders(),
-            body: JSON.stringify({ userEmail })
-        });
-        if (!r.ok) return { tier: 'free' };
-        return await r.json();
-    } catch (e) {
-        console.error('Verify sub error:', e);
-        return { tier: 'free' };
-    }
-};
-
-export const createCheckoutSession = async (priceId, userId, userEmail) => {
-    try {
-        const r = await fetch('/.netlify/functions/create-checkout', {
-            method: 'POST',
-            headers: await getAuthHeaders(),
-            body: JSON.stringify({
-                priceId,
-                userId,
-                userEmail,
-                successUrl: window.location.origin + '/?checkout=success',
-                cancelUrl: window.location.origin + '/'
-            })
-        });
-        const d = await r.json();
-        if (d.url) window.location.href = d.url;
-    } catch (e) {
-        console.error('Checkout error:', e);
-        alert('Payment setup failed. Please try again.');
-    }
 };
 
 export const exportProgress = (history, profile, score, weakAreas) => {

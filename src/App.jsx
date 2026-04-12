@@ -9,7 +9,6 @@ import { HomePage } from './pages/HomePage';
 import { DashPage } from './pages/DashPage';
 import { SimPage } from './pages/SimPage';
 import { CasesPage } from './pages/CasesPage';
-import { PricePage } from './pages/PricePage';
 import { AuthPage } from './pages/AuthPage';
 import { CVOnboardingPage } from './pages/CVOnboardingPage';
 
@@ -92,7 +91,6 @@ const AppContent = () => {
     dash: DashPage,
     sim: SimPage,
     cases: CasesPage,
-    price: PricePage,
     setup: CVOnboardingPage
   };
 

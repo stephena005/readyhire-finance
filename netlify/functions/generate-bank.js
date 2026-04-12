@@ -4,7 +4,7 @@
 exports.handler = async (event) => {
   const headers = {
     'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Content-Type': 'application/json',
   };
@@ -38,8 +38,8 @@ exports.handler = async (event) => {
     let jdContext = jobDescription ? `\nJOB DESCRIPTION:\n${jobDescription.slice(0, 2000)}` : '';
     let companyCtx = targetCompany ? `\nCOMPANY: ${targetCompany}` : '';
 
-    const nQ = Math.min(questionCount || 5, 6);
-    const nC = Math.min(caseCount || 1, 1);
+    const nQ = Math.min(questionCount || 5, 15);
+    const nC = Math.min(caseCount || 1, 5);
 
     const prompt = `Generate ${nQ} finance interview questions and ${nC} case study as JSON.${cvContext}${jdContext}${companyCtx}${targetRole ? `\nROLE: ${targetRole}` : ''}
 ${includeManagerLevel ? 'Include leadership questions.' : ''}
